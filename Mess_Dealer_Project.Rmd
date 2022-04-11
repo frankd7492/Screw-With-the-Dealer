@@ -1,0 +1,895 @@
+---
+title: "Sim Project"
+author: "Frank D'Ambrosio"
+date: "11/04/2021"
+output: html_document
+---
+
+package
+```{r}
+library(itertools)
+library(tidyverse)
+library(ggplot2)
+library(plyr)
+```
+
+sd.game returns players and drinks  
+sd.game2 returns the dealer at the end of the game  
+sd.game3 returns list of drinks for each player at the end of the game  
+last chunk plots players and drinks, prints out probability of ending as dealer  
+and calculates each players bac  
+
+
+
+create a deck
+```{r}
+
+deck <- c(rep(c("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"),4))
+full.deck <- deck #
+#sample(deck)
+
+```
+
+players
+```{r}
+n <- 6
+# for (i in 1:n) {
+#   cat("Player",i, " " )
+#   
+# }
+
+#n <- 6
+players <- vector()
+
+for (i in 1:n) {
+  players[i] <- i
+  # cat("Player",i, " " )
+}
+players
+
+#drink tally
+
+drinks <- vector()
+for (i in 1:n) {
+  drinks[i] <- 0
+  
+}
+
+drinks
+
+# drinks[active.player] <- 1
+# drinks
+totals <- cbind(players,drinks)
+totals
+
+```
+
+pick a dealer
+```{r}
+dealer <- sample(players,1)
+dealer
+
+```
+
+starting player/active player
+```{r}
+active.player <- players[dealer+1]
+
+if(active.player > n){
+  active.player <- 1
+}
+
+```
+
+
+move dealer to next person
+```{r}
+wrong <- 3
+dealer
+if (wrong == 3) {
+  if (dealer == players[n]) {
+    dealer <- players[1]
+    
+  }
+  else{
+    dealer <- players[dealer+1]
+    
+  }
+  wrong <- 0
+}
+```
+
+
+active player cant = dealer
+```{r}
+
+if(dealer == active.player){
+  active.player <- active.player[active.player + 1]
+}
+
+
+```
+
+
+
+turns
+```{r}
+
+
+wrong <- 0
+
+turn <- function() {
+
+  shuffled.deck <- sample(deck)
+  card <- shuffled.deck[1]
+  guess <- sample(shuffled.deck, 1)
+  if (guess == card) {
+    wrong <- 0
+    shuffled.deck <- shuffled.deck[-1]
+    drinks[dealer] <- 1 + drinks[dealer]
+  }
+  else{ #(guess != card){
+    remaining <- subset(shuffled.deck, shuffled.deck != guess)
+    guess2 <- sample(remaining , 1)
+    
+    
+    if (guess2 == card) {
+      wrong <- 0
+      shuffled.deck <- shuffled.deck[-1]
+      drinks[dealer] <- 1 + drinks[dealer]
+    }
+    else{#if(guess2 != card){
+      
+      wrong <- wrong + 1
+      shuffled.deck <- shuffled.deck[-1]
+      drinks[active.player] <- drinks[active.player] + 1
+    }
+ return(totals) }
+  
+}
+turn()
+
+
+
+```
+
+
+game
+```{r}
+shuffled.deck <- 0
+totals <- 0
+guess <- 0
+guess2 <- 0
+deck <- 0
+drinks <- 0
+wrong <- 0
+
+
+
+
+game <- function(n) {
+  #set up the game
+    deck <-
+    c(rep(
+      c("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"),
+      4
+    ))
+  
+  shuffled.deck <- sample(deck)
+  
+  players <- vector()
+  
+  for (i in 1:n) {
+    players[i] <- i
+  }
+  
+  drinks <- vector()
+  for (i in 1:n) {
+    drinks[i] <- 0
+    
+  }
+  
+  totals <- cbind(players, drinks)
+  
+  dealer <- sample(players, 1)
+  
+  rp <- setdiff(players, dealer)
+  
+  active.player <- sample(rp,1)
+
+  
+  wrong <- 0
+  
+  n.cards <- 52
+  
+  while (n.cards >2) {
+    ##turn starts here
+    card <- shuffled.deck[1]
+    guess <- sample(shuffled.deck, 1)
+    
+    if (guess == card) {
+      wrong <- 0
+      shuffled.deck <- shuffled.deck[-1]
+      drinks[dealer] <- 1 + drinks[dealer]
+    }
+    else{
+      # if (guess != card) {
+      remaining <- subset(shuffled.deck, shuffled.deck != guess)
+      guess2 <- sample(remaining , 1)
+      
+      if (guess2 == card) {
+        wrong <- 0
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[dealer] <- 1 + drinks[dealer]
+      }
+      else{
+        #if(guess2 != card){
+        
+        wrong <- wrong + 1
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[active.player] <- 1 + drinks[active.player] 
+      }
+    }
+    #1 turn
+    
+    
+    n.cards <- n.cards - 1
+    
+    active.player <- active.player[+1]
+    
+    if(active.player > n){
+      active.player <- players[1]
+    }
+    
+    #dealer management
+    if (wrong == 3) {
+      if (dealer == n) {
+        dealer <- 1
+        
+      }
+      else{
+        dealer <- players[dealer] + 1
+        
+      }
+      wrong <- 0
+    }
+    #go to next active player
+    
+    if(dealer == active.player){
+      active.player <- active.player + 1
+    }
+    
+    if(active.player > n){
+      active.player <- 1
+    }
+
+      
+      
+      #active player and dealer cant be the same
+  }
+  if(n.cards == 2){
+    drinks[dealer] <- 2 + drinks[dealer]
+  }
+  drinks <- drinks + 13 #everytime the 4th card appears everyone drink so we are gonna add 13 to all drink totals
+    
+    
+ totals <- cbind(players, drinks)
+ totals.df <- as.data.frame(cbind(players,drinks))
+  return(totals.df)
+  }
+ 
+  
+
+
+game(8)
+
+```
+
+replicate and look at distribution
+```{r}
+g <- replicate(10, game(8))
+
+#g
+```
+
+plot this
+```{r}
+n_sim <- 10000
+n_play <- 8
+g_list <- list()
+for(i in 1:n_sim) {
+  g_list[[i]] <- data.frame(game(n_play))
+  g_list[[i]]$sim_num <- i 
+}
+
+g_df <- do.call(rbind, g_list)
+
+
+ggplot(data = g_df, aes(drinks)) +
+  geom_histogram( bins=50) +
+  facet_wrap(~ players)
+
+ggplot(data = g_df, aes(players, drinks, group = players)) +
+  geom_boxplot()
+
+```
+
+
+lets see what happens when we designate a starting dealer
+```{r}
+
+shuffled.deck <- 0
+totals <- 0
+guess <- 0
+guess2 <- 0
+deck <- 0
+drinks <- 0
+wrong <- 0
+
+
+
+
+sd.game <- function(n,sd) {
+  #set up the game
+  if(sd<1 | sd>n){
+    return("Invalid Starting Dealer")
+  }
+    deck <-
+    c(rep(
+      c("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"),
+      4
+    ))
+  
+  shuffled.deck <- sample(deck)
+  
+  players <- vector()
+  
+  for (i in 1:n) {
+    players[i] <- i
+  }
+  
+  drinks <- vector()
+  for (i in 1:n) {
+    drinks[i] <- 0
+    
+  }
+  
+  totals <- cbind(players, drinks)
+  
+  dealer <- sd
+  
+  rp <- setdiff(players, dealer)
+  
+  active.player <- sample(rp,1)
+
+  
+  wrong <- 0
+  
+  n.cards <- 52
+  
+  while (n.cards >2) {
+    ##turn starts here
+    card <- shuffled.deck[1]
+    guess <- sample(shuffled.deck, 1)
+    
+    if (guess == card) {
+      wrong <- 0
+      shuffled.deck <- shuffled.deck[-1]
+      drinks[dealer] <- 1 + drinks[dealer]
+    }
+    else{
+      # if (guess != card) {
+      remaining <- subset(shuffled.deck, shuffled.deck != guess)
+      guess2 <- sample(remaining , 1)
+      
+      if (guess2 == card) {
+        wrong <- 0
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[dealer] <- 1 + drinks[dealer]
+      }
+      else{
+        #if(guess2 != card){
+        
+        wrong <- wrong + 1
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[active.player] <- 1 + drinks[active.player] 
+      }
+    }
+    #1 turn
+    
+    
+    n.cards <- n.cards - 1
+    
+    active.player <- active.player[+1]
+    
+    if(active.player > n){
+      active.player <- players[1]
+    }
+    
+    #dealer management
+    if (wrong == 3) {
+      if (dealer == n) {
+        dealer <- 1
+        
+      }
+      else{
+        dealer <- players[dealer] + 1
+        
+      }
+      wrong <- 0
+    }
+    #go to next active player
+    
+    if(dealer == active.player){
+      active.player <- active.player + 1
+    }
+    
+    if(active.player > n){
+      active.player <- 1
+    }
+
+      
+      
+      #active player and dealer cant be the same
+  }
+  if(n.cards == 2){
+    drinks[dealer] <- 2 + drinks[dealer]
+  }
+    drinks <- drinks + 13
+    #ends here
+ totals <- cbind(players, drinks, dealer)
+ totals.df <- as.data.frame(cbind(players,drinks))
+  return(totals)
+  }
+ 
+sd.game(7,5)
+
+```
+
+lets plot this now
+```{r}
+n_sim <- 10000
+n_play <- 7
+g_list <- list()
+for(i in 1:n_sim) {
+  g_list[[i]] <- data.frame(sd.game(n_play,5))
+  g_list[[i]]$sim_num <- i 
+}
+
+g_df <- do.call(rbind, g_list)
+
+
+ggplot(data = g_df, aes(drinks)) +
+  geom_histogram( bins=50) +
+  facet_wrap(~ players)
+
+ggplot(data = g_df, aes(players, drinks, group = players)) +
+  geom_boxplot()
+
+ggplot(data = g_df, aes(dealer)) +
+  geom_histogram( bins=30) +
+  facet_wrap(~ players)
+
+
+```
+probability of being dealer at end of game
+```{r}
+#sd.game2 is for returning the dealer at the end of the game
+sd.game2 <- function(n,sd) {
+  #set up the game
+  if(sd<1 | sd>n){
+    return("Invalid Starting Dealer")
+  }
+    deck <-
+    c(rep(
+      c("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"),
+      4
+    ))
+  
+  shuffled.deck <- sample(deck)
+  
+  players <- vector()
+  
+  for (i in 1:n) {
+    players[i] <- i
+  }
+  
+  drinks <- vector()
+  for (i in 1:n) {
+    drinks[i] <- 0
+    
+  }
+  
+  totals <- cbind(players, drinks)
+  
+  dealer <- sd
+  
+  rp <- setdiff(players, dealer)
+  
+  active.player <- sample(rp,1)
+
+  
+  wrong <- 0
+  
+  n.cards <- 52
+  
+  while (n.cards >2) {
+    ##turn starts here
+    card <- shuffled.deck[1]
+    guess <- sample(shuffled.deck, 1)
+    
+    if (guess == card) {
+      wrong <- 0
+      shuffled.deck <- shuffled.deck[-1]
+      drinks[dealer] <- 1 + drinks[dealer]
+    }
+    else{
+      # if (guess != card) {
+      remaining <- subset(shuffled.deck, shuffled.deck != guess)
+      guess2 <- sample(remaining , 1)
+      
+      if (guess2 == card) {
+        wrong <- 0
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[dealer] <- 1 + drinks[dealer]
+      }
+      else{
+        #if(guess2 != card){
+        
+        wrong <- wrong + 1
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[active.player] <- 1 + drinks[active.player] 
+      }
+    }
+    #1 turn
+    
+    
+    n.cards <- n.cards - 1
+    
+    active.player <- active.player[+1]
+    
+    if(active.player > n){
+      active.player <- players[1]
+    }
+    
+    #dealer management
+    if (wrong == 3) {
+      if (dealer == n) {
+        dealer <- 1
+        
+      }
+      else{
+        dealer <- players[dealer] + 1
+        
+      }
+      wrong <- 0
+    }
+    #go to next active player
+    
+    if(dealer == active.player){
+      active.player <- active.player + 1
+    }
+    
+    if(active.player > n){
+      active.player <- 1
+    }
+
+      
+      
+      #active player and dealer cant be the same
+  }
+  if(n.cards == 2){
+    drinks[dealer] <- 2 + drinks[dealer]
+  }
+    drinks <- drinks + 13
+    #ends here
+ totals <- cbind(players, drinks, dealer)
+ totals.df <- as.data.frame(cbind(players,drinks))
+  return(dealer)
+}
+
+prop.table(table(replicate(10000, sd.game2(7,5))))
+
+
+```
+
+
+
+
+pounds to kg
+```{r}
+
+pounds.to.g <- function(lbs){
+  g <- lbs*454
+  return(g)
+}
+
+pounds.to.g(150)
+
+
+```
+
+average grams per drink
+```{r}
+alc <- function(drinks){
+  alc.amnt <- drinks*1.4 #this is total alcohol in grams assuming 14 per full drink(ie 1 whole beer) and 1 full drink takes 10 drinks to finish. I did this with a drink taking 8 drinks to finish and the bac levels were a little higher than id expect but this game CAN do that to you
+  return(alc.amnt)
+  
+}
+
+alc(15)
+
+#https://www.wikihow.com/Calculate-Blood-Alcohol-Content-(Widmark-Formula)
+
+```
+
+bmi calc
+```{r}
+
+#for now lets average male and female constant for this calculation
+constant <- (.55+.68)/2
+constant
+
+#
+bac.formula <- function(alc.amnt, g){
+  bac <- (alc.amnt/(g*constant))*100
+  return(bac)
+}
+
+bac.formula(26.25, 68100)
+
+```
+
+bac.comb
+```{r}
+bac.comb <- function(drinks,lbs,s){
+  if(s == 1){
+    constant <- .68 #constant for males
+  }
+  else if(s == 2){
+    constant <- .55 #constant for females
+  }else{
+    return("invalid input for s") #i dont have any data for other genders' constant for bac calculation
+  }
+  
+  bac <- (alc(drinks)/(pounds.to.g(lbs)*constant) ) *100
+  
+  return(bac)
+  
+}
+
+bac.comb(22,150,1)
+```
+
+```{r}
+
+#sd.game3 is to return total drinks
+sd.game3 <- function(n,sd) {
+  #set up the game
+  if(sd<1 | sd>n){
+    return("Invalid Starting Dealer")
+  }
+    deck <-
+    c(rep(
+      c("2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"),
+      4
+    ))
+  
+  shuffled.deck <- sample(deck)
+  
+  players <- vector()
+  
+  for (i in 1:n) {
+    players[i] <- i
+  }
+  
+  drinks <- vector()
+  for (i in 1:n) {
+    drinks[i] <- 0
+    
+  }
+  
+  totals <- cbind(players, drinks)
+  
+  dealer <- sd
+  
+  rp <- setdiff(players, dealer)
+  
+  active.player <- sample(rp,1)
+
+  
+  wrong <- 0
+  
+  n.cards <- 52
+  
+  while (n.cards >2) {
+    ##turn starts here
+    card <- shuffled.deck[1]
+    guess <- sample(shuffled.deck, 1)
+    
+    if (guess == card) {
+      wrong <- 0
+      shuffled.deck <- shuffled.deck[-1]
+      drinks[dealer] <- 1 + drinks[dealer]
+    }
+    else{
+      # if (guess != card) {
+      remaining <- subset(shuffled.deck, shuffled.deck != guess)
+      guess2 <- sample(remaining , 1)
+      
+      if (guess2 == card) {
+        wrong <- 0
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[dealer] <- 1 + drinks[dealer]
+      }
+      else{
+        #if(guess2 != card){
+        
+        wrong <- wrong + 1
+        shuffled.deck <- shuffled.deck[-1]
+        drinks[active.player] <- 1 + drinks[active.player] 
+      }
+    }
+    #1 turn
+    
+    
+    n.cards <- n.cards - 1
+    
+    active.player <- active.player[+1]
+    
+    if(active.player > n){
+      active.player <- players[1]
+    }
+    
+    #dealer management
+    if (wrong == 3) {
+      if (dealer == n) {
+        dealer <- 1
+        
+      }
+      else{
+        dealer <- players[dealer] + 1
+        
+      }
+      wrong <- 0
+    }
+    #go to next active player
+    
+    if(dealer == active.player){
+      active.player <- active.player + 1
+    }
+    
+    if(active.player > n){
+      active.player <- 1
+    }
+
+      
+      
+      #active player and dealer cant be the same
+  }
+  if(n.cards == 2){
+    drinks[dealer] <- 2 + drinks[dealer]
+  }
+    drinks <- drinks + 13
+    #ends here
+ totals <- cbind(players, drinks, dealer)
+ totals.df <- as.data.frame(cbind(players,drinks))
+  return(drinks)
+  }
+
+
+n <- 7
+weight.list <- c(105,111,128,155,168,185,215) #random list of weights lbs
+
+s.list <- c(2,2,2,2,1,1,1) #random list of sex of players
+# weight.list
+# s.list
+drink_list <- c(34,19,16,16,16,22,20)
+
+
+bac.list <- list()
+
+for(i in 1:n){
+  bac.list[i] <- 0
+  bac.list[i] <- bac.comb(sd.game3(7,5)[i], weight.list[i], s.list[i])
+}
+
+#drink_list[[i]] <- data.frame(sd.game(n_play,5))
+cbind(bac.list)
+#sd.game(7,5)
+
+
+
+
+bac.list.avg <- list()
+for(i in 1:n){
+  bac.list.avg[i] <- 0
+  bac.list.avg[i] <- bac.comb(mean(replicate(1000,sd.game3(7,5))[i]),weight.list[i], s.list[i])
+}
+cbind(bac.list.avg)
+```
+
+```{r}
+
+weight.list <- c(105,111,128,155,168,185,215) #random list of weights lbs
+
+s.list <- c(2,2,2,2,1,1,1) #random list of sex of players
+
+#can change values of the above 2 lists for the function below
+
+
+
+
+
+bac.results <- function(n, sd) {
+  weight.list <- floor(runif(n, 105, 225))#this is for randomization but can be specified
+  s.list <- sample(1:2, n , replace = T)#this is for randomization but can be specified
+  
+  bac.list <- list()
+  
+  for (i in 1:n) {
+    bac.list[i] <- 0
+    bac.list[i] <-
+      bac.comb(sd.game3(7, 5)[i], weight.list[i], s.list[i])
+  }
+  bac.list.avg <- list()
+  for (i in 1:n) {
+    bac.list.avg[i] <- 0
+    bac.list.avg[i] <-
+      bac.comb(mean(replicate(1000, sd.game3(n, sd))[i]), weight.list[i], s.list[i])
+  }
+  return(cbind(cbind(bac.list), cbind(bac.list.avg), s.list, weight.list))
+}
+
+bac.results(7,5)
+```
+
+
+```{r}
+set.seed(8675309)
+
+###GG plots
+n_sim <- 10000
+n <- 7
+g_list <- list()
+for(i in 1:n_sim) {
+  g_list[[i]] <- data.frame(sd.game(n,5))
+  g_list[[i]]$sim_num <- i 
+}
+
+g_df <- do.call(rbind, g_list)
+
+
+ggplot(data = g_df, aes(drinks)) +
+  geom_histogram( bins=50) +
+  facet_wrap(~ players)
+
+ggplot(data = g_df, aes(players, drinks, group = players)) +
+  geom_boxplot()
+
+ggplot(data = g_df, aes(dealer)) +
+  geom_histogram( bins=30) +
+  facet_wrap(~ players)
+###
+
+
+
+###probability of being dealer at end of game
+cat("Probability of being dealer at the end of the game",rbind(1:n,prop.table(table(replicate(10000, sd.game2(7,5))))), sep = "
+")
+
+###bac results at end of game
+bac.results(7,5)
+```
+
+
+
+
+
+
+
+
+
+
+
+
